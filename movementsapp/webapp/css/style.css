@@ -1,0 +1,27 @@
+/* Enter your custom styles here */
+.TitleBox {
+    margin: 2rem;
+    margin-top: 1rem;
+    background-color: white;
+    padding: 1rem;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+}
+
+.title {
+    font-weight: bold;
+    font-size: 2rem;
+}
+
+
+.BodyBox {
+    margin: 2rem;
+    margin-top: -1rem;
+    background-color: white;
+    padding: 1rem;
+}
+
+.detailChanges {
+    margin-top: 0.5rem;
+    color: darkgray;
+}

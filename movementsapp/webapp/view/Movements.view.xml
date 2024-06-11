@@ -1,0 +1,51 @@
+<mvc:View controllerName="movementsapp.controller.Movements"
+    xmlns:mvc="sap.ui.core.mvc" displayBlock="true"
+    xmlns="sap.m"
+    xmlns:core="sap.ui.core">
+    <SplitApp id="SplitApp">
+        <!-- Master Page -->
+        <masterPages>
+            <Page id="masterPage" title="{i18n>title}">
+                <content>
+                    <VBox>
+                        <Select id="typeSelect" change="onTypeChange">
+                            <items>
+                                <core:Item key="all" text="All Types" />
+                                <core:Item key="IN" text="IN" />
+                                <core:Item key="OUT" text="OUT" />
+                                <core:Item key="I/O" text="I/O" />
+                            </items>
+                        </Select>
+                        <List id="entryList" mode="SingleSelectMaster" items="{/MovementSet}" selectionChange="onSelectionChange">
+                            <StandardListItem
+                                title="{Id}"
+                                description="{Type}"
+                                info="{Location}" />
+                        </List>
+                    </VBox>
+                </content>
+            </Page>
+        </masterPages>
+        <!-- Detail Page -->
+        <detailPages>
+            <Page id="detailPage" title="Details">
+                <content>
+                    <VBox>
+                        <VBox class="TitleBox">
+                            <Text id="detailId" text="ID: {Id}" class="title"/>
+                            <Text id="detailLocation" text="Location: {Location}"/>
+                            <Text id="detailFinished" text="{= ${Finished} ? 'Finished' : 'Not Finished'}"/>
+                        </VBox>
+
+                        <VBox class="BodyBox">
+                            <Text id="detailType" text="Type: {Type}"/>
+                            <Text id="detailMovDate" text="Date: {path: 'MovDate', type: 'sap.ui.model.type.Date', formatOptions: {style: 'medium'}}" />
+                            <Text id="detailPartner" text="Partner: {Partner}"/>
+                            <Text id="detailChanges" text="Last changed by {ChgUser} on {path: 'ChgDate', type: 'sap.ui.model.type.Date', formatOptions: {style: 'medium'}}" class="detailChanges"/>
+                        </VBox>                        
+                    </VBox>
+                </content>
+            </Page>
+        </detailPages>
+    </SplitApp>
+</mvc:View>
