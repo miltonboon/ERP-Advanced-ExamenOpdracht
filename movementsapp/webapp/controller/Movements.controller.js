@@ -2,8 +2,9 @@ sap.ui.define([
     "sap/ui/core/mvc/Controller",
     "sap/ui/model/json/JSONModel",
     "sap/ui/model/Filter",
-    "sap/ui/model/FilterOperator"
-], function (Controller, JSONModel, Filter, FilterOperator) {
+    "sap/ui/model/FilterOperator",
+    "sap/m/MessageToast"
+], function (Controller, JSONModel, Filter, FilterOperator, MessageToast) {
     "use strict";
 
     return Controller.extend("movementsapp.controller.Movements", {
@@ -17,19 +18,36 @@ sap.ui.define([
             this.getView().setModel(oItemsModel, "itemsModel");
         },
 
+        applyFilters: function () {
+            var oSelect = this.byId("typeSelect");
+            var sSelectedKey = oSelect.getSelectedKey();
+
+            var aFilters = [];
+            if (sSelectedKey && sSelectedKey !== "all") {
+                aFilters.push(new Filter("Type", FilterOperator.EQ, sSelectedKey));
+            }
+
+            var oList = this.byId("entryList");
+            var oBinding = oList.getBinding("items");
+            oBinding.filter(aFilters);
+
+            console.log("Applied filter: ", sSelectedKey);
+        },
+
         onSelectionChange: function (oEvent) {
             var oList = oEvent.getSource();
             var oSelectedItem = oList.getSelectedItem();
 
             if (oSelectedItem) {
                 var oBindingContext = oSelectedItem.getBindingContext();
-                this._showDetail(oBindingContext);
+                var sMovId = oBindingContext.getProperty("Id");
+                this._showDetail(oBindingContext, sMovId);
             } else {
                 this._clearDetail();
             }
         },
 
-        _showDetail: function (oBindingContext) {
+        _showDetail: function (oBindingContext, sMovId) {
             var oDetailPage = this.byId("detailPage");
             var oDetailContent = this.byId("detailContent");
             var oNoDataText = this.byId("noDataText");
@@ -39,6 +57,12 @@ sap.ui.define([
 
             oDetailPage.bindElement(oBindingContext.getPath());
             this.byId("SplitApp").toDetail(oDetailPage);
+
+            // Apply filter to the items list based on selected MovId
+            var oItemsList = this.byId("itemsListDetail");
+            var aFilters = [new Filter("MovId", FilterOperator.EQ, sMovId)];
+            var oBinding = oItemsList.getBinding("items");
+            oBinding.filter(aFilters);
         },
 
         _clearDetail: function () {
@@ -51,41 +75,11 @@ sap.ui.define([
 
             oDetailPage.unbindElement();
             this.byId("SplitApp").toDetail(oDetailPage);
-        },
 
-        applyFilters: function () {
-            var oSelect = this.byId("typeSelect");
-            var sSelectedKey = oSelect.getSelectedKey();
-
-            var oStartDatePicker = this.byId("startDatePicker");
-            var oEndDatePicker = this.byId("endDatePicker");
-
-            var sStartDate = oStartDatePicker.getValue();
-            var sEndDate = oEndDatePicker.getValue();
-
-            var aFilters = [];
-
-            if (sSelectedKey && sSelectedKey !== "all") {
-                aFilters.push("Type eq '" + sSelectedKey + "'");
-            }
-
-            if (sStartDate) {
-                aFilters.push("MovDate ge " + sStartDate);
-            }
-
-            if (sEndDate) {
-                aFilters.push("MovDate le " + sEndDate);
-            }
-
-            if (aFilters.length > 0) {
-                this.uri = "/MovementSet?$filter=" + aFilters.join(" and ");
-            } else {
-                this.uri = "/MovementSet";
-            }
-
-            console.log(this.uri);
-            this.oModel.setUseBatch(false);
-            this.oModel.loadData(this.uri);
+            // Clear the items list filter
+            var oItemsList = this.byId("itemsListDetail");
+            var oBinding = oItemsList.getBinding("items");
+            oBinding.filter([]);
         },
 
         onOpenCreateDialog: function () {
@@ -163,8 +157,20 @@ sap.ui.define([
         },
 
         onConfirmDelete: function () {
+            var sPath = "/MovementSet('" + this._deleteEntryId + "')";
+            var oModel = this.getView().getModel();
+
+            oModel.remove(sPath, {
+                success: function () {
+                    MessageToast.show("Movement deleted successfully");
+                    this.onCloseConfirmDeleteDialog();
+                }.bind(this),
+                error: function () {
+                    MessageToast.show("Error deleting movement");
+                }
+            });
+
             console.log("Delete Movement ID: ", this._deleteEntryId);
-            this.onCloseConfirmDeleteDialog();
         }
     });
 });
