@@ -11,9 +11,9 @@ sap.ui.define([
 
         onInit: function () {
             this.uri = "/MovementSet";
-            this._items = []; // items van create pop up 
+            this._items = []; // items for create popup 
 
-            // object voor de create pop up
+            // model for the create popup
             var oItemsModel = new JSONModel({ items: [] });
             this.getView().setModel(oItemsModel, "itemsModel");
         },
@@ -83,8 +83,8 @@ sap.ui.define([
         },
 
         onOpenCreateDialog: function () {
-            this._items = []; // maakt de items array leeg om opnieuwe in te vullen
-            this.getView().getModel("itemsModel").setProperty("/items", this._items); // maakt het model van de items ook leeg
+            this._items = []; // clear the items array for new input
+            this.getView().getModel("itemsModel").setProperty("/items", this._items); // clear the items model
 
             if (!this._createDialog) {
                 this._createDialog = this.byId("createMovementDialog");
@@ -98,17 +98,107 @@ sap.ui.define([
             }
         },
 
+        _generateRandomId: function () {
+            var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            var id = '';
+            for (var i = 0; i < 4; i++) {
+                id += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return id;
+        },
+
+        // New function to generate random numerical ID for items
+        _generateItemRandomId: function () {
+            return Math.floor(100000 + Math.random() * 900000).toString();
+        },
+
         onSaveNewMovement: function () {
             var location = this.byId("locationSelect").getSelectedKey();
             var type = this.byId("typeSelectDialog").getSelectedKey();
             var date = this.byId("datePicker").getDateValue();
             var partner = this.byId("partnerInput").getValue();
+            var id = this._generateRandomId(); // Generate unique ID for the movement
+            var user = sap.ushell.Container.getUser().getId();
+            var mandt = 238;
+            var finished = false;
 
-            var newMovement = { location, type, date, partner, items: this._items };
+            // Ensure date is in correct format
+            var oDateFormat = sap.ui.core.format.DateFormat.getDateTimeInstance({ pattern: "yyyy-MM-dd'T'HH:mm:ss" });
+            var formattedDate = oDateFormat.format(date);
+
+            // Get the current date and time
+            var currentDate = new Date();
+            var formattedCurrentDate = oDateFormat.format(currentDate);
+
+            var newMovement = {
+                Id: id,
+                Type: type,
+                MovDate: formattedDate,
+                ChgDate: formattedCurrentDate,
+                ChgUser: user,
+                Partner: partner,
+                Location: location,
+                Finished: finished
+            };
+
+            var oModel = this.getView().getModel();
+            var oView = this.getView();
+
+            // Create the movement
+            oModel.create("/MovementSet", newMovement, {
+                success: function () {
+                    MessageToast.show("New movement created successfully");
+
+                    // Create items associated with this movement one by one
+                    var items = this._items;
+                    items.forEach(function (item, index) {
+                        var newItem = {
+                            MovId: id,
+                            Matnr: item.materialNumber,
+                            Umziz: item.quantity,
+                            Meins: item.unit,
+                            ItemId: this._generateItemRandomId()
+                        };
+                        console.log("Item: ", newItem);
+
+                        // Use a unique groupId for each item creation request
+                        var groupId = "batchRequest" + index;
+                        oModel.create("/ItemSet", newItem, {
+                            groupId: groupId,
+                            success: function () {
+                                console.log("Item created successfully: ", newItem);
+                                // Check if all items are created successfully
+                                if (index === items.length - 1) {
+                                    oView.byId("createMovementDialog").close();
+                                }
+                            },
+                            error: function () {
+                                MessageToast.show("Error creating item: " + item.materialNumber);
+                            }
+                        });
+
+                        // Submit the changes for this item
+                        oModel.submitChanges({
+                            groupId: groupId,
+                            success: function () {
+                                console.log("Batch request successful for groupId: ", groupId);
+                            },
+                            error: function () {
+                                console.log("Batch request failed for groupId: ", groupId);
+                            }
+                        });
+                    }.bind(this));
+
+                }.bind(this),
+                error: function () {
+                    MessageToast.show("Error creating new movement");
+                }
+            });
 
             console.log("New Movement: ", newMovement);
-            this.onCloseCreateDialog();
         },
+
+
 
         onOpenAddItemDialog: function () {
             if (!this._addItemDialog) {

@@ -17,15 +17,9 @@
                                 </items>
                             </Select>                    
                         </VBox>
-                        <VBox class="dateFilter">
-                            <Label text="Start Date"/>
-                            <DatePicker id="startDatePicker" width="50%" valueFormat="yyyy-MM-dd" displayFormat="long"/>
-                            
-                            <Label text="End Date" class="sapUiSmallMarginTop"/>
-                            <DatePicker id="endDatePicker" width="50%" valueFormat="yyyy-MM-dd" displayFormat="long"/>
-                        </VBox>
-                        <Button text="Search" type="Emphasized" press="applyFilters" class="searchButton"/>
-
+                        <Button text="Search " type="Emphasized" press="applyFilters" class="searchButton"/>
+                        <Button text="New" icon="sap-icon://add" press="onOpenCreateDialog" class="searchButton"/>
+                        
                         <List id="entryList" mode="SingleSelectMaster" items="{/MovementSet}" selectionChange="onSelectionChange" class="movementList">
                             <StandardListItem
                                 title="{Id}"
@@ -34,8 +28,6 @@
                         </List>
                     </VBox>
                 </content>
-                <!-- create/plus knop -->
-                <Button icon="sap-icon://add" press="onOpenCreateDialog" class="floatingButton"/>
             </Page>
         </masterPages>
         <detailPages>
